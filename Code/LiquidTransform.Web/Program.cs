@@ -22,14 +22,17 @@ app.MapPost("/api/transform", async (HttpRequest req) =>
         return Results.BadRequest("Missing files");
 
     var root = string.IsNullOrWhiteSpace(form["rootElement"])
-               ? null : form["rootElement"].ToString();
+               ? null
+               : form["rootElement"].ToString();
 
     using var tplReader  = new StreamReader(tpl.OpenReadStream());
     using var jsonReader = new StreamReader(json.OpenReadStream());
 
     var transformer = new Transformer(await tplReader.ReadToEndAsync());
     var result = transformer.RenderFromString(await jsonReader.ReadToEndAsync(), root);
-    return Results.Ok(result);
+
+    return Results.Text(result, "text/plain");
 });
+
 
 app.Run();
