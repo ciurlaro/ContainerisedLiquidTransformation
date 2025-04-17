@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+  <head>
+    <meta charset="utf-8" />
+    <title>Liquid Transform</title>
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
+    <!-- JetBrains Mono font -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <!-- highlight.js dark theme -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css" />
+    <style>
+      :root {
+        --bg-gradient-start: #9fb3ff;
+        --bg-gradient-end: #bdcadc;
+        --card-bg: #1f2a33;
+        --card-fg: #d6e1ff;
+        --comment-color: #6c7a89;
+      }
+      body {
+        background: radial-gradient(circle at 25% 10%, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+        min-height: 100vh;
+        font-family: "JetBrains Mono", monospace;
+        color: var(--card-fg);
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding-top: 4rem;
+      }
+      .code-card {
+        background: var(--card-bg);
+        border-radius: 1rem;
+        box-shadow: 0 10px 25px rgba(31, 42, 51, 0.6);
+      }
+      label.form-label { color: var(--comment-color); }
+      .btn-primary { background-color: #556cff; border-color: #556cff; }
+      .btn-primary:hover { background-color: #4055ff; border-color: #4055ff; }
+      .hljs-attr { font-weight: 700; }  /* JSON keys */
+      .hljs-name { font-weight: 700; }  /* XML/HTML tag names */
+      table.csv-table th { background-color: #293642; color: var(--card-fg); font-weight: 600; }
+      table.csv-table td { background-color: #1f2a33; color: var(--card-fg); }
+    </style>
+  </head>
+  <body>
+    <div class="container-sm code-card p-4 w-100" style="max-width: 680px;">
+      <h2 class="text-center mb-4">Liquid Transform</h2>
+      <form id="form" class="vstack gap-3">
+        <div>
+          <label class="form-label" for="tpl">Template (.liquid)</label>
+          <input class="form-control" id="tpl" type="file" accept=".liquid" required />
+        </div>
+        <div>
+          <label class="form-label" for="json">Content (.json)</label>
+          <input class="form-control" id="json" type="file" accept=".json" required />
+        </div>
+        <div>
+          <label class="form-label" for="root">Root element (optional)</label>
+          <input class="form-control" id="root" type="text" />
+        </div>
+        <button class="btn btn-primary w-100" id="run" type="submit">Transform</button>
+      </form>
+      <div id="out" class="mt-4 w-100"></div>
+    </div>
+
+    <!-- highlight.js scripts for JSON, XML/HTML and YAML -->
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/languages/json.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/languages/xml.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/languages/yaml.min.js"></script>
+
+    <script>
+      hljs.configure({ ignoreUnescapedHTML: true });
+      const form   = document.getElementById('form');
+      const output = document.getElementById('out');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        output.innerHTML = "<span class='text-warning'>Running …</span>";
+        const tpl  = document.getElementById('tpl').files[0];
+        const json = document.getElementById('json').files[0];
+        const root = document.getElementById('root').value.trim();
+        if (!tpl || !json) { alert('Both template and content files are required.'); output.innerHTML=''; return; }
+        const fd = new FormData();
+        fd.append('template', tpl);
+        fd.append('content',  json);
+        if (root) fd.append('rootElement', root);
+        try {
+          const res  = await fetch('/api/transform', { method: 'POST', body: fd });
+          const text = await res.text();
+          res.ok ? renderOutput(text) : output.innerHTML = `❌ ${escapeHtml(text)}`;
+        } catch (err) { output.innerHTML = `❌ ${err}`; }
+      });
+
+      /* Dispatcher */
+      function renderOutput(text) {
+        if (tryRenderJson(text))  return;
+        if (tryRenderCsv(text))   return;
+        if (tryRenderXml(text))   return;
+        if (tryRenderYaml(text))  return;
+        if (tryRenderHtml(text))  return;
+        renderPlain(text);
+      }
+
+      /* JSON */
+      function tryRenderJson(text) {
+        try {
+          const obj = JSON.parse(text);
+          const pretty = JSON.stringify(obj, null, 2);
+          output.innerHTML = `<pre class='p-3 rounded bg-dark'><code class='json hljs'></code></pre>`;
+          const codeEl = output.querySelector('code');
+          codeEl.textContent = pretty;
+          hljs.highlightElement(codeEl);
+          return true;
+        } catch { return false; }
+      }
+
+      /* CSV */
+      function tryRenderCsv(text) {
+        const lines = text.trim().split(/\r?\n/);
+        if (lines.length < 2 || !lines[0].includes(',')) return false;
+        const table = document.createElement('table');
+        table.className = 'table table-bordered table-dark table-striped csv-table';
+        lines.forEach((line, idx) => {
+          const row = table.insertRow(-1);
+          line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).forEach(cell => {
+            const cellEl = idx === 0 ? document.createElement('th') : document.createElement('td');
+            cellEl.textContent = cell.replace(/^"|"$/g, '');
+            row.appendChild(cellEl);
+          });
+        });
+        output.innerHTML = '';
+        output.appendChild(table);
+        return true;
+      }
+
+      /* XML */
+      function tryRenderXml(text) {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(text, 'application/xml');
+        if (xmlDoc.getElementsByTagName('parsererror').length) return false;
+        const pretty = formatXml(xmlDoc);
+        renderHighlighted(pretty, 'xml');
+        return true;
+      }
+
+      /* YAML */
+      function tryRenderYaml(text) {
+        // naive detection: contains ':' AND at least one newline, but not valid JSON
+        if (/^\s*\{/.test(text)) return false; // JSON object begins with {
+        if (!/:/.test(text) || !/\n/.test(text)) return false;
+        renderHighlighted(text.trim(), 'yaml');
+        return true;
+      }
+
+      /* HTML */
+      function tryRenderHtml(text) {
+        const trimmed = text.trim();
+        if (!trimmed.startsWith('<') || !trimmed.includes('>')) return false;
+        // Avoid rendering the HTML directly; escape for safety and syntax highlight
+        renderHighlighted(trimmed, 'xml'); // xml grammar covers HTML
+        return true;
+      }
+
+      /* helper to render highlighted block */
+      function renderHighlighted(code, lang) {
+        output.innerHTML = `<pre class='p-3 rounded bg-dark'><code class='${lang} hljs'></code></pre>`;
+        const codeEl = output.querySelector('code');
+        codeEl.textContent = code;
+        hljs.highlightElement(codeEl);
+      }
+
+      /* plain fallback */
+      function renderPlain(text) {
+        output.innerHTML = `<pre class='p-3 rounded bg-dark text-light'>${escapeHtml(text)}</pre>`;
+      }
+
+      /* utilities */
+      function escapeHtml(str) {
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+      function formatXml(xmlDom) {
+        const serializer = new XMLSerializer();
+        const xmlStr = serializer.serializeToString(xmlDom);
+        const reg = /(>)(<)(\/*)/g;
+        let formatted = '', pad = 0;
+        xmlStr.replace(reg, '$1\n$2$3').split(/\n/).forEach(node => {
+          if (node.match(/^<\/.+/)) pad -= 1;
+          formatted += '  '.repeat(Math.max(pad,0)) + node + '\n';
+          if (node.match(/^<[^!].*[^\/]>$/)) pad += 1;
+        });
+        return formatted.trim();
+      }
+    </script>
+  </body>
+</html>
