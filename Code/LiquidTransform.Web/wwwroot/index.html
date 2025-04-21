@@ -38,8 +38,7 @@
       --d3:         #2e67ff;
       --d4:         #1852ff;
       --d5:         #003eff;
-      /* green‑ish header */
-      --header-bg:  #2e7d32;
+      --header-bg: #2e7d32;
     }
 
     body {
@@ -65,7 +64,6 @@
     }
 
     h2 { color: var(--card-fg); }
-
     label.form-label { color: var(--cmt); }
 
     .btn-primary {
@@ -78,7 +76,18 @@
       border-color: #4055ff;
     }
 
-    #out { max-height: 60vh; overflow: auto; }
+    #out {
+      max-height: 45vh;
+      overflow: auto;
+    }
+
+    #copy.copied {
+      transform: scale(1.1);
+      background-color: #198754 !important; /* green */
+      border-color: #198754 !important;
+      color: white;
+      transition: all 0.3s ease;
+    }
 
     pre, table { max-width: 100%; overflow-x: auto; }
 
@@ -94,7 +103,6 @@
 
     .CodeMirror-foldgutter { width: .8rem; }
 
-    /* override Bootstrap dark table header */
     table.table-dark thead th {
       background-color: var(--header-bg) !important;
       color: #fff !important;
@@ -124,20 +132,20 @@
   </form>
 
   <div id="treeBtns" class="d-flex gap-2 mt-3 d-none">
-    <button id="expand"  class="btn btn-sm btn-outline-light">Expand all</button>
-    <button id="collapse"class="btn btn-sm btn-outline-light">Collapse all</button>
+    <button id="expand" class="btn btn-sm btn-outline-light">Expand all</button>
+    <button id="collapse" class="btn btn-sm btn-outline-light">Collapse all</button>
+    <a      id="download" class="btn btn-sm btn-outline-light" href="#" download>Download</a>
+    <button id="copy" class="btn btn-sm btn-outline-light">Copy</button>
   </div>
 
   <div id="out" class="mt-3"></div>
 </div>
 
-<!-- highlight.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/xml.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/yaml.min.js"></script>
 
-<!-- CodeMirror -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/yaml/yaml.min.js"></script>
@@ -150,12 +158,14 @@
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
 <script>
-const form = document.getElementById('form');
-const out = document.getElementById('out');
-const btns = document.getElementById('treeBtns');
-const expand = document.getElementById('expand');
+const form     = document.getElementById('form');
+const out      = document.getElementById('out');
+const btns     = document.getElementById('treeBtns');
+const expand   = document.getElementById('expand');
 const collapse = document.getElementById('collapse');
-let cm = null;
+const download = document.getElementById('download');
+const copy     = document.getElementById('copy');
+let cm = null, latest = '';
 
 form.addEventListener('submit', async e => {
   e.preventDefault();
@@ -177,11 +187,40 @@ form.addEventListener('submit', async e => {
 });
 
 function render(t) {
-  if (showJson(t)) return;
-  if (showYaml(t)) return;
-  if (showCsv(t)) return;
-  if (showXml(t)) return;
-  out.innerHTML = `<pre class="p-3 bg-dark rounded text-light">${escape(t)}</pre>`;
+  latest = t;
+  out.innerHTML = ''; // clear previous content
+
+  // Try to render; fallback is plain <pre>
+  if (!(showJson(t) || showYaml(t) || showCsv(t) || showXml(t))) {
+    out.innerHTML = `<pre class="p-3 bg-dark rounded text-light">${escape(t)}</pre>`;
+  }
+
+  const [mime, ext] = mimeOf(t);
+  const blob = new Blob([t], { type: mime });
+  const url = URL.createObjectURL(blob);
+  download.href = url;
+  download.download = `result.${ext}`;
+
+  copy.onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(latest);
+      copy.classList.add('copied');
+      setTimeout(() => copy.classList.remove('copied'), 800);
+    } catch {
+      alert('Copy failed');
+    }
+  };
+
+  btns.classList.remove('d-none');
+}
+
+
+function mimeOf(s){
+  if (showJson(s,true)) return ['application/json','json'];
+  if (showYaml(s,true)) return ['text/yaml','yaml'];
+  if (showCsv (s,true)) return ['text/csv','csv'];
+  if (showXml (s,true)) return ['application/xml','xml'];
+  return ['text/plain','txt'];
 }
 
 function mount(v, mode) {
