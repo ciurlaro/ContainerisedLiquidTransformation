@@ -27,22 +27,11 @@
 
   <style>
     :root {
-      --bg-start:   #9fb3ff;
-      --bg-end:     #bdcadc;
-      --card-bg:    #1f2a33;
-      --card-fg:    #d6e1ff;
-      --cmt:        #6c7a89;
-      --d0:         #77aaff;
-      --d1:         #5e93ff;
-      --d2:         #457dff;
-      --d3:         #2e67ff;
-      --d4:         #1852ff;
-      --d5:         #003eff;
-      --header-bg: #2e7d32;
+      --bg-start:#9fb3ff; --bg-end:#bdcadc; --card-bg:#1f2a33; --card-fg:#d6e1ff;
+      --cmt:#6c7a89; --header-bg:#2e7d32;
     }
-
     body {
-      background: radial-gradient(circle at 25% 10%, var(--bg-start) 0%, var(--bg-end) 100%);
+      background: radial-gradient(circle at 25% 10%, var(--bg-start), var(--bg-end));
       font-family: "JetBrains Mono", monospace;
       color: var(--card-fg);
       min-height: 100vh;
@@ -51,7 +40,6 @@
       justify-content: center;
       padding: 3rem 0;
     }
-
     .card {
       background: var(--card-bg);
       box-shadow: 0 10px 25px rgba(31,42,51,.6);
@@ -62,47 +50,40 @@
       max-height: calc(100vh - 2rem);
       overflow: auto;
     }
-
     h2 { color: var(--card-fg); }
     label.form-label { color: var(--cmt); }
-
     .btn-primary {
       background: #556cff;
       border-color: #556cff;
     }
-
     .btn-primary:hover {
       background: #4055ff;
       border-color: #4055ff;
     }
-
     #out {
       max-height: 45vh;
       overflow: auto;
     }
-
     #copy.copied {
       transform: scale(1.1);
-      background-color: #198754 !important; /* green */
+      background-color: #198754 !important;
       border-color: #198754 !important;
       color: white;
       transition: all 0.3s ease;
     }
-
-    pre, table { max-width: 100%; overflow-x: auto; }
-
+    pre, table {
+      max-width: 100%;
+      overflow-x: auto;
+    }
     .CodeMirror {
       background: var(--card-bg) !important;
       color: var(--card-fg) !important;
     }
-
     .CodeMirror-gutters {
       background: var(--card-bg) !important;
       border-right: 0;
     }
-
     .CodeMirror-foldgutter { width: .8rem; }
-
     table.table-dark thead th {
       background-color: var(--header-bg) !important;
       color: #fff !important;
@@ -110,8 +91,6 @@
       top: 0;
       z-index: 1;
     }
-
-    summary { cursor: pointer; }
   </style>
 </head>
 <body>
@@ -141,6 +120,7 @@
   <div id="out" class="mt-3"></div>
 </div>
 
+<!-- libs -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/xml.min.js"></script>
@@ -149,9 +129,11 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/yaml/yaml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/xml/xml.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/fold/foldcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/fold/brace-fold.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/fold/indent-fold.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/fold/xml-fold.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/fold/foldall.min.js"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/yaml@2.7.1/dist/index.min.js"></script>
@@ -179,8 +161,10 @@ form.addEventListener('submit', async e => {
 
   const fd = new FormData(); fd.append('template', tpl); fd.append('content', src);
   try {
-    const r = await fetch('/api/transform', { method: 'POST', body: fd });
-    const txt = await r.text(); if (!r.ok) throw txt; render(txt);
+    const r   = await fetch('/api/transform', { method: 'POST', body: fd });
+    const txt = await r.text();
+    if (!r.ok) throw txt;
+    render(txt);
   } catch (err) {
     out.textContent = '❌ ' + err;
   }
@@ -188,32 +172,29 @@ form.addEventListener('submit', async e => {
 
 function render(t) {
   latest = t;
-  out.innerHTML = ''; // clear previous content
-
-  // Try to render; fallback is plain <pre>
+  out.innerHTML = '';
   if (!(showJson(t) || showYaml(t) || showCsv(t) || showXml(t))) {
-    out.innerHTML = `<pre class="p-3 bg-dark rounded text-light">${escape(t)}</pre>`;
+    out.innerHTML = `<pre class="p-3 bg-dark rounded text-light">${escapeHtml(t)}</pre>`;
   }
 
   const [mime, ext] = mimeOf(t);
   const blob = new Blob([t], { type: mime });
-  const url = URL.createObjectURL(blob);
-  download.href = url;
+  download.href = URL.createObjectURL(blob);
   download.download = `result.${ext}`;
 
   copy.onclick = async () => {
     try {
       await navigator.clipboard.writeText(latest);
-      copy.classList.add('copied');
-      setTimeout(() => copy.classList.remove('copied'), 800);
     } catch {
-      alert('Copy failed');
+      const ta = Object.assign(document.createElement('textarea'), { value: latest });
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
     }
+    copy.classList.add('copied');
+    setTimeout(() => copy.classList.remove('copied'), 800);
   };
 
   btns.classList.remove('d-none');
 }
-
 
 function mimeOf(s){
   if (showJson(s,true)) return ['application/json','json'];
@@ -223,8 +204,15 @@ function mimeOf(s){
   return ['text/plain','txt'];
 }
 
-function mount(v, mode) {
+function mount(v, mode){
   out.innerHTML = '<textarea id="viewer"></textarea>';
+
+  const foldOptions = {
+    javascript: ['brace-fold', 'indent-fold'],
+    yaml:       ['indent-fold'],
+    xml:        ['xml-fold']
+  };
+
   cm = CodeMirror.fromTextArea(document.getElementById('viewer'), {
     value: v,
     mode,
@@ -232,75 +220,52 @@ function mount(v, mode) {
     readOnly: true,
     lineNumbers: true,
     foldGutter: true,
-    gutters: ['CodeMirror-linenumbers','CodeMirror-foldgutter']
+    gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter']
   });
   cm.setValue(v);
+  expand.onclick   = () => cm.execCommand('unfoldAll');
+  collapse.onclick = () => cm.execCommand('foldAll');
   btns.classList.remove('d-none');
-  expand.onclick  = () => cm.execCommand('unfoldAll');
-  collapse.onclick= () => cm.execCommand('foldAll');
 }
 
-function showJson(t) { try { mount(JSON.stringify(JSON.parse(t),null,2),{name:'javascript',json:true}); return true; } catch { return false; } }
-function showYaml(t){ try{ YAML.parse(t); mount(t,'yaml'); return true;}catch{return false}}
-
-function sanitizeHeader(h){
-  return h.trim().replace(/[^\w\s]/g,'').replace(/\s+/g,'_');
+function showJson(t, checkOnly=false){
+  try { const obj = JSON.parse(t); if (checkOnly) return true;
+        mount(JSON.stringify(obj,null,2), {name:'javascript',json:true}); return true;
+  } catch { return false; }
 }
 
-function showCsv(t){
-  const result = Papa.parse(t,{
-    header:true, skipEmptyLines:true, escapeChar:'\\', transformHeader:sanitizeHeader
-  });
-  const data = result.data;
-  if(data.length===0||Object.keys(data[0]).length===0) return false;
+function showYaml(t, checkOnly=false){
+  try { if (checkOnly) { YAML.parse(t); return true; }
+        mount(t, 'yaml'); return true;
+  } catch { return false; }
+}
+
+function sanitizeHeader(h){ return h.trim().replace(/[^\w\s]/g,'').replace(/\s+/g,'_'); }
+
+function showCsv(t, checkOnly=false){
+  const result = Papa.parse(t,{header:true,skipEmptyLines:true,escapeChar:'\\',transformHeader:sanitizeHeader});
+  if(checkOnly) return !(result.data.length===0||Object.keys(result.data[0]).length===0);
+  if(result.data.length===0||Object.keys(result.data[0]).length===0) return false;
 
   const tbl = document.createElement('table');
   tbl.className='table table-bordered table-dark table-striped';
-
-  const thead = tbl.createTHead();
-  const hdr = thead.insertRow();
-  Object.keys(data[0]).forEach(k=>{
-    const th=document.createElement('th');
-    th.textContent=k;
-    hdr.appendChild(th);
-  });
-
+  const thead = tbl.createTHead(); const hdr = thead.insertRow();
+  Object.keys(result.data[0]).forEach(k=>{ const th=document.createElement('th'); th.textContent=k; hdr.appendChild(th); });
   const tbody = tbl.createTBody();
-  data.forEach(row=>{
-    const tr=tbody.insertRow();
-    Object.values(row).forEach(val=>{
-      const td=tr.insertCell();
-      td.textContent=val;
-    });
-  });
-
-  if(result.errors.length) console.warn('CSV warnings:',result.errors);
-
-  out.textContent='';
-  out.appendChild(tbl);
-  return true;
+  result.data.forEach(r=>{ const tr=tbody.insertRow(); Object.values(r).forEach(v=>{ const td=tr.insertCell(); td.textContent=v; });});
+  out.textContent=''; out.appendChild(tbl); return true;
 }
 
-function showXml(t){
-  const doc=new DOMParser().parseFromString(t,'application/xml');
+function showXml(t, checkOnly=false){
+  const doc = new DOMParser().parseFromString(t,'application/xml');
   if(doc.getElementsByTagName('parsererror').length) return false;
-  const pretty=prettyXml(doc);
-  const html=pretty
-    .replace(/^(\s*)(<[^/][^>]*>)/gm,(m,s,tag)=>`${s}<details open data-lv="${s.length/2}"><summary>${tag}</summary>`)
-    .replace(/^(\s*)(<\/[^>]+>)/gm,'$1</details>$1$2');
-  out.innerHTML=html;
-  document.querySelectorAll('[data-lv]').forEach(el=>{
-    const lv=Math.min(+el.dataset.lv,5);
-    el.style.color=getComputedStyle(document.documentElement).getPropertyValue(`--d${lv}`);
-  });
+  if(checkOnly) return true;
+  const pretty = t.replace(/>\s*</g,'>\n<');
+  mount(pretty, 'xml');
   return true;
 }
 
-function escape(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
-function prettyXml(x){
-  const s=new XMLSerializer().serializeToString(x);
-  return s.replace(/(>)(<)(\/*)/g,'$1\n$2$3');
-}
+function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
 </script>
 </body>
 </html>
