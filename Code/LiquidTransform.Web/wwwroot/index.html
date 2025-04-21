@@ -46,58 +46,28 @@
     h2 { color: var(--card-fg); }
     label.form-label { color: var(--cmt); }
 
-    .btn-primary {
-      background: #556cff;
-      border-color: #556cff;
-    }
-    .btn-primary:hover {
-      background: #4055ff;
-      border-color: #4055ff;
-    }
+    .btn-primary      { background:#556cff; border-color:#556cff; }
+    .btn-primary:hover{ background:#4055ff; border-color:#4055ff; }
 
-    #out {
-      max-height: 45vh;
-      overflow: auto;
-    }
+    #out      { max-height:45vh; overflow:auto; }
+    pre       { max-width:100%; overflow-x:auto; }
 
-    pre {
-      max-width: 100%;
-      overflow-x: auto;
-    }
-
-    .CodeMirror {
-      background: var(--card-bg) !important;
-      color: var(--card-fg) !important;
-    }
-    .CodeMirror-gutters {
-      background: var(--card-bg) !important;
-      border-right: 0;
-    }
-    .CodeMirror-foldgutter { width: 1rem; }
-    .CodeMirror-foldgutter-open:after  { content: "▾"; color: #8fb2ff; }
-    .CodeMirror-foldgutter-folded:after { content: "▸"; color: #8fb2ff; }
+    /* CodeMirror tweaks */
+    .CodeMirror      { background:var(--card-bg) !important; color:var(--card-fg); }
+    .CodeMirror-gutters{ background:var(--card-bg) !important; border-right:0; }
+    .CodeMirror-foldgutter            { width:1rem; }
+    .CodeMirror-foldgutter-open:after { content:"▾"; color:#8fb2ff; }
+    .CodeMirror-foldgutter-folded:after{ content:"▸"; color:#8fb2ff; }
     .CodeMirror-gutter-wrapper:hover .CodeMirror-foldgutter-open:after,
-    .CodeMirror-gutter-wrapper:hover .CodeMirror-foldgutter-folded:after { color: #fff; }
+    .CodeMirror-gutter-wrapper:hover .CodeMirror-foldgutter-folded:after{ color:#fff; }
     .CodeMirror-foldgutter-open:after,
-    .CodeMirror-foldgutter-folded:after {
-      cursor: pointer;
-      font-size: .9rem;
-    }
+    .CodeMirror-foldgutter-folded:after{ cursor:pointer; font-size:.9rem; }
 
-    .alert-danger {
-      background: #ff4d4f;
-      color: #fff;
-      border: none;
-      font-weight: bold;
-    }
+    .alert-danger { background:#ff4d4f; color:#fff; border:none; font-weight:bold; }
 
-    table thead th {
-      background: #2e7d32 !important;
-      color: #fff !important;
-      position: sticky;
-      top: 0;
-      z-index: 1;
-      white-space: nowrap;
+    table thead th{
+      background:#2e7d32 !important; color:#fff !important;
+      position:sticky; top:0; z-index:1; white-space:nowrap;
     }
   </style>
 </head>
@@ -119,7 +89,7 @@
     </form>
 
     <div id="treeBtns" class="d-flex gap-2 mt-3 d-none">
-      <button id="expand" class="btn btn-sm btn-outline-light">Expand all</button>
+      <button id="expand"  class="btn btn-sm btn-outline-light">Expand all</button>
       <button id="collapse" class="btn btn-sm btn-outline-light">Collapse all</button>
     </div>
 
@@ -150,7 +120,7 @@
     const $ = id => document.getElementById(id);
     const form = $('form'), out = $('out'), btns = $('treeBtns'),
           expand = $('expand'), collapse = $('collapse'),
-          $btns = $('resultBtns'), $copyBtn = $('copyBtn');
+          $btns = $('resultBtns');
     let cm = null, lastCsvData = null;
 
     form.addEventListener('submit', async e => {
@@ -178,167 +148,103 @@
       }
     });
 
+    /* ---- render order: JSON → CSV → YAML → XML ---- */
     function render(t) {
-      if (showJson(t) || showYaml(t) || showXml(t) || showCsv(t)) {
-        showButtons();
-        return;
-      }
+      if (showJson(t) || showCsv(t) || showYaml(t) || showXml(t)) { showButtons(); return; }
       out.innerHTML = `<pre class="p-3 bg-dark rounded text-light">${escapeHtml(t)}</pre>`;
       showButtons();
     }
-
-    function showButtons() {
-      $btns.classList.remove('d-none');
-    }
+    const showButtons = () => $btns.classList.remove('d-none');
 
     function getCurrentOutputString () {
-      if (cm && typeof cm.getValue === 'function') {
-        return cm.getValue();
-      }
-      if (lastCsvData) {
-        return Papa.unparse(lastCsvData);
-      }
-      const raw = out.querySelector('pre')?.innerText || out.innerText || '';
-      return raw.trim();
+      if (cm) return cm.getValue();
+      if (lastCsvData) return Papa.unparse(lastCsvData);
+      return (out.querySelector('pre')?.innerText || out.innerText || '').trim();
     }
 
     async function copyOut(ev) {
-      const btn = ev.currentTarget;
-      const text = getCurrentOutputString();
-      if (!text) return flash(btn, false);
-      try {
-        await navigator.clipboard.writeText(text);
-        flash(btn, true);
-      } catch {
-        const ta = document.createElement('textarea');
-        ta.value = text;
-        ta.style.position = 'fixed';
-        ta.style.left = '-9999px';
-        document.body.appendChild(ta);
-        ta.select();
-        const ok = document.execCommand('copy');
-        document.body.removeChild(ta);
-        flash(btn, ok);
-      }
+      const btn = ev.currentTarget, text = getCurrentOutputString();
+      if (!text) return flash(btn,false);
+      try      { await navigator.clipboard.writeText(text); flash(btn,true); }
+      catch(_) { const ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.left='-9999px'; document.body.appendChild(ta); ta.select(); const ok=document.execCommand('copy'); document.body.removeChild(ta); flash(btn,ok); }
     }
-
-    function flash(btn, ok = true) {
-      const original = btn.innerHTML;
-      btn.innerHTML = ok ? '✅ Copied!' : '⚠️ Failed';
-      btn.disabled = true;
-      setTimeout(() => {
-        btn.innerHTML = original;
-        btn.disabled = false;
-      }, 1000);
-    }
+    const flash = (btn,ok=true) => {
+      const html=btn.innerHTML; btn.innerHTML=ok?'✅ Copied!':'⚠️ Failed'; btn.disabled=true;
+      setTimeout(()=>{btn.innerHTML=html; btn.disabled=false;},1000);
+    };
 
     function downloadOut() {
       const content = getCurrentOutputString();
       let ext = 'txt';
-
-      if (cm && typeof cm.getOption === 'function') {
+      if (cm) {
         const mode = cm.getOption('mode');
         if (typeof mode === 'string') {
-          if (mode.includes('yaml'))     ext = 'yaml';
-          else if (mode.includes('xml')) ext = 'xml';
-          else if (mode.includes('json')) ext = 'json';
-        } else if (typeof mode === 'object' && mode.name === 'javascript' && mode.json) {
-          ext = 'json';
-        }
-      } else if (lastCsvData) {
-        ext = 'csv';
-      }
-
-      const blob = new Blob([content], { type: 'text/plain' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `output.${ext}`;
-      a.click();
+          if      (mode.includes('yaml')) ext='yaml';
+          else if (mode.includes('xml'))  ext='xml';
+          else if (mode.includes('json')) ext='json';
+        } else if (mode?.name==='javascript' && mode.json) ext='json';
+      } else if (lastCsvData) ext='csv';
+      const blob = new Blob([content],{type:'text/plain'});
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`output.${ext}`; a.click();
     }
 
-
-    function escapeHtml(s) {
-      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    }
+    const escapeHtml = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
     function mount(content, mode) {
       out.innerHTML = '<textarea id="viewer"></textarea>';
       cm = CodeMirror.fromTextArea($('viewer'), {
-        mode, theme: 'dracula', readOnly: true,
-        lineNumbers: true, foldGutter: true,
-        gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter']
+        mode, theme:'dracula', readOnly:true,
+        lineNumbers:true, foldGutter:true,
+        gutters:['CodeMirror-linenumbers','CodeMirror-foldgutter']
       });
       cm.setValue(content);
-      cm.getWrapperElement().addEventListener('click', ev => {
+      cm.on('gutterClick', (_cm, line, _gutter, ev) => {
         if (!ev.target.closest('.CodeMirror-foldgutter') &&
             !ev.target.closest('.CodeMirror-linenumber')) return;
-        const pos = cm.coordsChar({ left: ev.clientX, top: ev.clientY }, 'window');
-        cm.foldCode(CodeMirror.Pos(pos.line, 0));
+        cm.foldCode(CodeMirror.Pos(line,0));
       });
       btns.classList.remove('d-none');
-      expand.onclick = () => cm.execCommand('unfoldAll');
-      collapse.onclick = () => cm.execCommand('foldAll');
+      expand.onclick  = () => cm.execCommand('unfoldAll');
+      collapse.onclick= () => cm.execCommand('foldAll');
     }
 
-    function showJson(t) {
-      try {
-        mount(JSON.stringify(JSON.parse(t), null, 2), { name: 'javascript', json: true });
-        return true;
-      } catch { return false; }
+    /* ---- detectors ---- */
+    function showJson(t){ try{ mount(JSON.stringify(JSON.parse(t),null,2),{name:'javascript',json:true}); return true;}catch{ return false;} }
+
+    function showCsv(t){
+      if(!t.includes(',')) return false;
+      const res = Papa.parse(t,{header:true,skipEmptyLines:true,escapeChar:'\\',transformHeader:h=>h.trim().replace(/[^\w\s]/g,'').replace(/\s+/g,'_')});
+      const data=res.data; if(!data.length||!Object.keys(data[0]).length) return false;
+      lastCsvData=data;
+      const tbl=document.createElement('table'); tbl.className='table table-bordered table-dark table-striped';
+      const thead=tbl.createTHead(), hdr=thead.insertRow();
+      Object.keys(data[0]).forEach(k=>{ const th=document.createElement('th'); th.textContent=k; hdr.appendChild(th); });
+      const tbody=tbl.createTBody();
+      data.forEach(r=>{ const tr=tbody.insertRow(); Object.values(r).forEach(v=>{ const td=tr.insertCell(); td.textContent=v; }); });
+      out.textContent=''; out.appendChild(tbl);
+      return true;
     }
 
-    function showYaml(t) {
-      try { YAML.parse(t); mount(t, 'yaml'); return true; } catch { return false; }
+    function showYaml(t){
+      try{ YAML.parse(t); }catch(_){}
+      mount(t,{name:'yaml'});           /* always show as YAML */
+      return true;
     }
 
-    function showXml(t) {
-      const doc = new DOMParser().parseFromString(t, 'application/xml');
+    function showXml(t){
+      const doc=new DOMParser().parseFromString(t,'application/xml');
       if (doc.getElementsByTagName('parsererror').length) return false;
-      mount(prettyXml(doc.documentElement), 'xml');
-      return true;
+      mount(prettyXml(doc.documentElement),'xml'); return true;
     }
-
-    function prettyXml(root) {
-      const s = new XMLSerializer().serializeToString(root),
-            lines = s.replace(/(>)(<)(\/*)/g, '$1\n$2$3').split('\n');
-      let depth = 0;
-      return lines.map(l => {
-        if (l.match(/^<\/\w/)) depth--;
-        const pad = '  '.repeat(depth);
-        if (l.match(/^<\w[^>]*[^\/]>.*$/)) depth++;
-        return pad + l;
+    function prettyXml(root){
+      const s=new XMLSerializer().serializeToString(root), lines=s.replace(/(>)(<)(\/*)/g,'$1\n$2$3').split('\n');
+      let depth=0;
+      return lines.map(l=>{
+        if(l.match(/^<\/\w/)) depth--;
+        const pad='  '.repeat(depth);
+        if(l.match(/^<\w[^>]*[^\/]>.*$/)) depth++;
+        return pad+l;
       }).join('\n');
-    }
-
-    function showCsv(t) {
-      if (!t.includes(',')) return false;
-      const res = Papa.parse(t, {
-        header: true,
-        skipEmptyLines: true,
-        escapeChar: '\\',
-        transformHeader: h => h.trim().replace(/[^\w\s]/g, '').replace(/\s+/g, '_')
-      });
-      const data = res.data;
-      if (!data.length || !Object.keys(data[0]).length) return false;
-      lastCsvData = data;
-      const tbl = document.createElement('table');
-      tbl.className = 'table table-bordered table-dark table-striped';
-      const thead = tbl.createTHead(), hdr = thead.insertRow();
-      Object.keys(data[0]).forEach(k => {
-        const th = document.createElement('th');
-        th.textContent = k;
-        hdr.appendChild(th);
-      });
-      const tbody = tbl.createTBody();
-      data.forEach(r => {
-        const tr = tbody.insertRow();
-        Object.values(r).forEach(v => {
-          const td = tr.insertCell(); td.textContent = v;
-        });
-      });
-      out.textContent = '';
-      out.appendChild(tbl);
-      return true;
     }
   </script>
 </body>
