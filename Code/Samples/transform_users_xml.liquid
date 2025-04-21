@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<users>
+  {% assign active = users | where: "is_active", true %}
+  {% for user in active %}
+  <user>
+    <id>{{ user.id }}</id>
+    <name>{{ user.name | escape }}</name>
+    <email>{{ user.email | escape }}</email>
+    <age>{{ user.age }}</age>
+    <roles>
+      {% for role in user.roles %}
+      <role>{{ role }}</role>
+      {% endfor %}
+    </roles>
+  </user>
+  {% endfor %}
+</users>

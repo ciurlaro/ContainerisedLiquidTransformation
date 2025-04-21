@@ -1,0 +1,5 @@
+"id","name","email","age","is_active","role_count","first_role","last_role","has_admin","has_editor","has_viewer","has_moderator","role_1","role_2","role_3"
+{% assign active = users | where: "is_active", true %}
+{% for user in active -%}
+"{{ user.id }}","{{ user.name | replace: '"', '""' }}","{{ user.email | replace: '"', '""' }}","{{ user.age }}","{{ user.is_active }}","{{ user.roles.size }}","{{ user.roles.first | replace: '"', '""' }}","{{ user.roles.last | replace: '"', '""' }}","{{ user.roles contains 'admin' }}","{{ user.roles contains 'editor' }}","{{ user.roles contains 'viewer' }}","{{ user.roles contains 'moderator' }}","{% if user.roles.size > 0 %}{{ user.roles[0] | replace: '"', '""' }}{% endif %}","{% if user.roles.size > 1 %}{{ user.roles[1] | replace: '"', '""' }}{% endif %}","{% if user.roles.size > 2 %}{{ user.roles[2] | replace: '"', '""' }}{% endif %}"
+{% endfor -%}

@@ -1,0 +1,15 @@
+{
+  "active_users": [
+    {% assign active = users | where: "is_active", true %}
+    {% for user in active %}
+      {
+        "id": {{ user.id }},
+        "name": "{{ user.name }}",
+        "email": "{{ user.email }}",
+        "roles": [{% for role in user.roles %}"{{ role }}"{% if forloop.last == false %}, {% endif %}{% endfor %}]
+      }{% if forloop.last == false %}, {% endif %}
+    {% endfor %}
+  ],
+  "count": {{ users.size }},
+  "active_count": {{ active.size }}
+}

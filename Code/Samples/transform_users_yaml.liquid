@@ -1,0 +1,14 @@
+active_users:
+{% assign active = users | where: "is_active", true %}
+{% for user in active %}
+  - id: {{ user.id }}
+    name: "{{ user.name | escape }}"
+    email: "{{ user.email | escape }}"
+    age: {{ user.age }}
+    roles:
+      {% for role in user.roles %}
+      - "{{ role }}"
+      {% endfor %}
+{% endfor %}
+active_count: {{ active.size }}
+total_count: {{ users.size }}
