@@ -1,175 +1,345 @@
 <!DOCTYPE html>
 <html lang="en" class="h-100">
 <head>
-<meta charset="utf-8"><title>Liquid Transform</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="utf-8">
+  <title>Liquid Transform</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
 
-<!-- libs -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css" rel="stylesheet">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css" rel="stylesheet">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css" rel="stylesheet">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/fold/foldgutter.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/fold/foldgutter.min.css" rel="stylesheet">
 
-<style>
-:root{--bg-start:#9fb3ff;--bg-end:#bdcadc;--card-bg:#1f2a33;--card-fg:#d6e1ff;--cmt:#6c7a89}
-body{background:radial-gradient(circle at 25% 10%,var(--bg-start)0%,var(--bg-end)100%);
-     font-family:"JetBrains Mono",monospace;color:var(--card-fg);min-height:100vh;
-     display:flex;align-items:flex-start;justify-content:center;padding:3rem 0}
-.card{background:var(--card-bg);box-shadow:0 10px 25px rgba(31,42,51,.6);
-      border-radius:1rem;padding:2rem;width:95%;max-width:680px;
-      max-height:calc(100vh - 2rem);overflow:auto}
-h2{color:var(--card-fg)}label.form-label{color:var(--cmt)}
-.btn-primary{background:#556cff;border-color:#556cff}.btn-primary:hover{background:#4055ff;border-color:#4055ff}
-#out{max-height:60vh;overflow:auto}pre{max-width:100%;overflow-x:auto}
-.CodeMirror{background:var(--card-bg)!important;color:var(--card-fg)!important}
-.CodeMirror-gutters{background:var(--card-bg)!important;border-right:0}
-.CodeMirror-foldgutter{width:1rem}
-.CodeMirror-foldgutter-open:after  {content:"▾";color:#8fb2ff}
-.CodeMirror-foldgutter-folded:after{content:"▸";color:#8fb2ff}
-.CodeMirror-gutter-wrapper:hover .CodeMirror-foldgutter-open:after,
-.CodeMirror-gutter-wrapper:hover .CodeMirror-foldgutter-folded:after{color:#fff}
-.CodeMirror-foldgutter-open:after,
-.CodeMirror-foldgutter-folded:after{cursor:pointer;font-size:.9rem}
-.alert-danger{background:#ff4d4f;color:#fff;border:none;font-weight:bold}
-</style>
+  <style>
+    :root {
+      --bg-start: #9fb3ff;
+      --bg-end: #bdcadc;
+      --card-bg: #1f2a33;
+      --card-fg: #d6e1ff;
+      --cmt: #6c7a89;
+    }
+
+    body {
+      background: radial-gradient(circle at 25% 10%, var(--bg-start) 0%, var(--bg-end) 100%);
+      font-family: "JetBrains Mono", monospace;
+      color: var(--card-fg);
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 3rem 0;
+    }
+
+    .card {
+      background: var(--card-bg);
+      box-shadow: 0 10px 25px rgba(31,42,51,.6);
+      border-radius: 1rem;
+      padding: 2rem;
+      width: 95%;
+      max-width: 680px;
+      max-height: calc(100vh - 2rem);
+      overflow: auto;
+    }
+
+    h2 { color: var(--card-fg); }
+    label.form-label { color: var(--cmt); }
+
+    .btn-primary {
+      background: #556cff;
+      border-color: #556cff;
+    }
+    .btn-primary:hover {
+      background: #4055ff;
+      border-color: #4055ff;
+    }
+
+    #out {
+      max-height: 45vh;
+      overflow: auto;
+    }
+
+    pre {
+      max-width: 100%;
+      overflow-x: auto;
+    }
+
+    .CodeMirror {
+      background: var(--card-bg) !important;
+      color: var(--card-fg) !important;
+    }
+    .CodeMirror-gutters {
+      background: var(--card-bg) !important;
+      border-right: 0;
+    }
+    .CodeMirror-foldgutter { width: 1rem; }
+    .CodeMirror-foldgutter-open:after  { content: "▾"; color: #8fb2ff; }
+    .CodeMirror-foldgutter-folded:after { content: "▸"; color: #8fb2ff; }
+    .CodeMirror-gutter-wrapper:hover .CodeMirror-foldgutter-open:after,
+    .CodeMirror-gutter-wrapper:hover .CodeMirror-foldgutter-folded:after { color: #fff; }
+    .CodeMirror-foldgutter-open:after,
+    .CodeMirror-foldgutter-folded:after {
+      cursor: pointer;
+      font-size: .9rem;
+    }
+
+    .alert-danger {
+      background: #ff4d4f;
+      color: #fff;
+      border: none;
+      font-weight: bold;
+    }
+
+    table thead th {
+      background: #2e7d32 !important;
+      color: #fff !important;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      white-space: nowrap;
+    }
+  </style>
 </head>
 
 <body>
-<div class="card">
-<h2 class="text-center mb-4">Liquid Transform</h2>
+  <div class="card">
+    <h2 class="text-center mb-4">Liquid Transform</h2>
 
-<form id="form" class="vstack gap-3">
-  <div><label class="form-label" for="tpl">Template (.liquid)</label>
-       <input class="form-control" id="tpl" type="file" accept=".liquid" required></div>
-  <div><label class="form-label" for="src">Content (.json / .xml / .html / .yaml / .csv)</label>
-       <input class="form-control" id="src" type="file" accept=".json,.xml,.html,.yaml,.yml,.csv" required></div>
-  <button class="btn btn-primary w-100" type="submit">Transform</button>
-</form>
+    <form id="form" class="vstack gap-3">
+      <div>
+        <label class="form-label" for="tpl">Template (.liquid)</label>
+        <input class="form-control" id="tpl" type="file" accept=".liquid" required>
+      </div>
+      <div>
+        <label class="form-label" for="src">Content (.json / .xml / .html / .yaml / .csv)</label>
+        <input class="form-control" id="src" type="file" accept=".json,.xml,.html,.yaml,.yml,.csv" required>
+      </div>
+      <button class="btn btn-primary w-100" type="submit">Transform</button>
+    </form>
 
-<div id="treeBtns" class="d-flex gap-2 mt-3 d-none">
-  <button id="expand"   class="btn btn-sm btn-outline-light">Expand all</button>
-  <button id="collapse" class="btn btn-sm btn-outline-light">Collapse all</button>
-</div>
+    <div id="treeBtns" class="d-flex gap-2 mt-3 d-none">
+      <button id="expand" class="btn btn-sm btn-outline-light">Expand all</button>
+      <button id="collapse" class="btn btn-sm btn-outline-light">Collapse all</button>
+    </div>
 
-<div id="out" class="mt-3"></div>
-</div>
+    <div id="out" class="mt-3"></div>
 
-<!-- scripts -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/xml/xml.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/yaml/yaml.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/fold/foldcode.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/fold/brace-fold.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/fold/xml-fold.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/fold/indent-fold.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/fold/foldall.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/fold/foldgutter.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/yaml@2.7.1/dist/index.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <div id="resultBtns" class="d-flex gap-2 mt-3 d-none">
+      <button id="copyBtn" class="btn btn-sm btn-outline-light" onclick="copyOut(event)">Copy</button>
+      <button class="btn btn-sm btn-outline-light" onclick="downloadOut()">Download</button>
+    </div>
+  </div>
 
-<script>
-const $ = id => document.getElementById(id);
-const form = $('form'), out = $('out'), btns = $('treeBtns'),
-      expand = $('expand'), collapse = $('collapse');
-let cm = null;
+  <!-- scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/xml/xml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/yaml/yaml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/fold/foldcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/fold/brace-fold.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/fold/xml-fold.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/fold/indent-fold.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/fold/foldall.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/fold/foldgutter.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/yaml@2.7.1/dist/index.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
-/*--------------------------------------------------------*/
-form.addEventListener('submit', async e => {
-  e.preventDefault(); btns.classList.add('d-none');
-  if (cm){ cm.toTextArea(); cm = null; }
-  out.textContent = 'Running…';
+  <script>
+    const $ = id => document.getElementById(id);
+    const form = $('form'), out = $('out'), btns = $('treeBtns'),
+          expand = $('expand'), collapse = $('collapse'),
+          $btns = $('resultBtns'), $copyBtn = $('copyBtn');
+    let cm = null, lastCsvData = null;
 
-  const tpl=$('tpl').files[0], src=$('src').files[0];
-  if(!tpl||!src){ alert('Both files required'); out.textContent=''; return; }
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      btns.classList.add('d-none');
+      $btns.classList.add('d-none');
+      lastCsvData = null;
+      if (cm) { cm.toTextArea(); cm = null; }
+      out.textContent = 'Running…';
 
-  const fd = new FormData(); fd.append('template',tpl); fd.append('content',src);
-  try{
-    const r = await fetch('/api/transform',{method:'POST',body:fd});
-    const txt = await r.text();
-    if(!r.ok) throw txt;
-    render(txt);
-  }catch(err){
-    out.innerHTML=`<div class="alert alert-danger" role="alert">❌ ${escapeHtml(err)}</div>`;
-  }
-});
+      const tpl = $('tpl').files[0], src = $('src').files[0];
+      if (!tpl || !src) { alert('Both files required'); out.textContent = ''; return; }
 
-/*--------------------------------------------------------*/
-function render(t){
-  if(showJson(t)) return;
-  if(showYaml(t)) return;
-  if(showXml(t))  return;
-  if(showCsv(t))  return;
-  out.innerHTML=`<pre class="p-3 bg-dark rounded text-light">${escapeHtml(t)}</pre>`;
-}
+      const fd = new FormData();
+      fd.append('template', tpl);
+      fd.append('content', src);
 
-/*--------------------------------------------------------*/
-function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function mount(content, mode){
-  out.innerHTML='<textarea id="viewer"></textarea>';
-  cm = CodeMirror.fromTextArea($('viewer'),{
-    mode, theme:'dracula', readOnly:true,
-    lineNumbers:true, foldGutter:true,
-    gutters:['CodeMirror-linenumbers','CodeMirror-foldgutter']
-  });
-  cm.setValue(content);
+      try {
+        const r = await fetch('/api/transform', { method: 'POST', body: fd });
+        const txt = await r.text();
+        if (!r.ok) throw txt;
+        render(txt);
+      } catch (err) {
+        out.innerHTML = `<div class="alert alert-danger" role="alert">❌ ${escapeHtml(err)}</div>`;
+      }
+    });
 
-  /* robust gutter handler: triangle OR number */
-  cm.getWrapperElement().addEventListener('click', ev => {
-    if (!ev.target.closest('.CodeMirror-foldgutter') &&
-        !ev.target.closest('.CodeMirror-linenumber')) return;
-    const pos = cm.coordsChar({left:ev.clientX, top:ev.clientY}, 'window');
-    cm.foldCode(CodeMirror.Pos(pos.line, 0));
-  });
+    function render(t) {
+      if (showJson(t) || showYaml(t) || showXml(t) || showCsv(t)) {
+        showButtons();
+        return;
+      }
+      out.innerHTML = `<pre class="p-3 bg-dark rounded text-light">${escapeHtml(t)}</pre>`;
+      showButtons();
+    }
 
-  btns.classList.remove('d-none');
-  expand.onclick   = () => cm.execCommand('unfoldAll');
-  collapse.onclick = () => cm.execCommand('foldAll');
-}
+    function showButtons() {
+      $btns.classList.remove('d-none');
+    }
 
-/* JSON */
-function showJson(t){ try{ mount(JSON.stringify(JSON.parse(t),null,2),
-                                 {name:'javascript',json:true}); return true; }catch{return false;} }
+    function getCurrentOutputString () {
+      if (cm && typeof cm.getValue === 'function') {
+        return cm.getValue();
+      }
+      if (lastCsvData) {
+        return Papa.unparse(lastCsvData);
+      }
+      const raw = out.querySelector('pre')?.innerText || out.innerText || '';
+      return raw.trim();
+    }
 
-/* YAML */
-function showYaml(t){ try{ YAML.parse(t); mount(t,'yaml'); return true; }catch{return false;} }
+    async function copyOut(ev) {
+      const btn = ev.currentTarget;
+      const text = getCurrentOutputString();
+      if (!text) return flash(btn, false);
+      try {
+        await navigator.clipboard.writeText(text);
+        flash(btn, true);
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        flash(btn, ok);
+      }
+    }
 
-/* XML / HTML */
-function showXml(t){
-  const doc = new DOMParser().parseFromString(t,'application/xml');
-  if(doc.getElementsByTagName('parsererror').length) return false;
-  mount(prettyXml(doc.documentElement),'xml'); return true;
-}
-function prettyXml(root){
-  const s = new XMLSerializer().serializeToString(root),
-        lines = s.replace(/(>)(<)(\/*)/g,'$1\n$2$3').split('\n');
-  let depth = 0;
-  return lines.map(l=>{
-    if(l.match(/^<\/\w/)) depth--;
-    const pad = '  '.repeat(depth);
-    if(l.match(/^<\w[^>]*[^\/]>.*$/)) depth++;
-    return pad + l;
-  }).join('\n');
-}
+    function flash(btn, ok = true) {
+      const original = btn.innerHTML;
+      btn.innerHTML = ok ? '✅ Copied!' : '⚠️ Failed';
+      btn.disabled = true;
+      setTimeout(() => {
+        btn.innerHTML = original;
+        btn.disabled = false;
+      }, 1000);
+    }
 
-/* CSV */
-function showCsv(t){
-  if(!t.includes(',')) return false;
-  const res = Papa.parse(t,{header:true,skipEmptyLines:true,escapeChar:'\\',
-                            transformHeader:h=>h.trim().replace(/[^\w\s]/g,'').replace(/\s+/g,'_')}),
-        data = res.data;
-  if(!data.length||!Object.keys(data[0]).length) return false;
-  const tbl=document.createElement('table'); tbl.className='table table-bordered table-dark table-striped';
-  const thead=tbl.createTHead(), hdr=thead.insertRow();
-  Object.keys(data[0]).forEach(k=>{const th=document.createElement('th'); th.textContent=k; hdr.appendChild(th);});
-  const tbody=tbl.createTBody();
-  data.forEach(r=>{const tr=tbody.insertRow();
-                   Object.values(r).forEach(v=>{const td=tr.insertCell(); td.textContent=v;});});
-  out.textContent=''; out.appendChild(tbl); return true;
-}
-</script>
+    function downloadOut() {
+      const content = getCurrentOutputString();
+      let ext = 'txt';
+
+      if (cm && typeof cm.getOption === 'function') {
+        const mode = cm.getOption('mode');
+        if (typeof mode === 'string') {
+          if (mode.includes('yaml'))     ext = 'yaml';
+          else if (mode.includes('xml')) ext = 'xml';
+          else if (mode.includes('json')) ext = 'json';
+        } else if (typeof mode === 'object' && mode.name === 'javascript' && mode.json) {
+          ext = 'json';
+        }
+      } else if (lastCsvData) {
+        ext = 'csv';
+      }
+
+      const blob = new Blob([content], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `output.${ext}`;
+      a.click();
+    }
+
+
+    function escapeHtml(s) {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function mount(content, mode) {
+      out.innerHTML = '<textarea id="viewer"></textarea>';
+      cm = CodeMirror.fromTextArea($('viewer'), {
+        mode, theme: 'dracula', readOnly: true,
+        lineNumbers: true, foldGutter: true,
+        gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter']
+      });
+      cm.setValue(content);
+      cm.getWrapperElement().addEventListener('click', ev => {
+        if (!ev.target.closest('.CodeMirror-foldgutter') &&
+            !ev.target.closest('.CodeMirror-linenumber')) return;
+        const pos = cm.coordsChar({ left: ev.clientX, top: ev.clientY }, 'window');
+        cm.foldCode(CodeMirror.Pos(pos.line, 0));
+      });
+      btns.classList.remove('d-none');
+      expand.onclick = () => cm.execCommand('unfoldAll');
+      collapse.onclick = () => cm.execCommand('foldAll');
+    }
+
+    function showJson(t) {
+      try {
+        mount(JSON.stringify(JSON.parse(t), null, 2), { name: 'javascript', json: true });
+        return true;
+      } catch { return false; }
+    }
+
+    function showYaml(t) {
+      try { YAML.parse(t); mount(t, 'yaml'); return true; } catch { return false; }
+    }
+
+    function showXml(t) {
+      const doc = new DOMParser().parseFromString(t, 'application/xml');
+      if (doc.getElementsByTagName('parsererror').length) return false;
+      mount(prettyXml(doc.documentElement), 'xml');
+      return true;
+    }
+
+    function prettyXml(root) {
+      const s = new XMLSerializer().serializeToString(root),
+            lines = s.replace(/(>)(<)(\/*)/g, '$1\n$2$3').split('\n');
+      let depth = 0;
+      return lines.map(l => {
+        if (l.match(/^<\/\w/)) depth--;
+        const pad = '  '.repeat(depth);
+        if (l.match(/^<\w[^>]*[^\/]>.*$/)) depth++;
+        return pad + l;
+      }).join('\n');
+    }
+
+    function showCsv(t) {
+      if (!t.includes(',')) return false;
+      const res = Papa.parse(t, {
+        header: true,
+        skipEmptyLines: true,
+        escapeChar: '\\',
+        transformHeader: h => h.trim().replace(/[^\w\s]/g, '').replace(/\s+/g, '_')
+      });
+      const data = res.data;
+      if (!data.length || !Object.keys(data[0]).length) return false;
+      lastCsvData = data;
+      const tbl = document.createElement('table');
+      tbl.className = 'table table-bordered table-dark table-striped';
+      const thead = tbl.createTHead(), hdr = thead.insertRow();
+      Object.keys(data[0]).forEach(k => {
+        const th = document.createElement('th');
+        th.textContent = k;
+        hdr.appendChild(th);
+      });
+      const tbody = tbl.createTBody();
+      data.forEach(r => {
+        const tr = tbody.insertRow();
+        Object.values(r).forEach(v => {
+          const td = tr.insertCell(); td.textContent = v;
+        });
+      });
+      out.textContent = '';
+      out.appendChild(tbl);
+      return true;
+    }
+  </script>
 </body>
 </html>
