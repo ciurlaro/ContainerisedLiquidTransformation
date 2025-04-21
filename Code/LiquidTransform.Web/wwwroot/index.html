@@ -83,7 +83,8 @@
       </div>
       <div>
         <label class="form-label" for="src">Content (.json / .xml / .html / .yaml / .csv)</label>
-        <input class="form-control" id="src" type="file" accept=".json,.xml,.html,.yaml,.yml,.csv" required>
+        <input class="form-control" id="src" type="file"
+               accept=".json,.xml,.html,.yaml,.yml,.csv" required>
       </div>
       <button class="btn btn-primary w-100" type="submit">Transform</button>
     </form>
@@ -96,7 +97,8 @@
     <div id="out" class="mt-3"></div>
 
     <div id="resultBtns" class="d-flex gap-2 mt-3 d-none">
-      <button id="copyBtn" class="btn btn-sm btn-outline-light" onclick="copyOut(event)">Copy</button>
+      <button id="copyBtn" class="btn btn-sm btn-outline-light"
+              onclick="copyOut(event)">Copy</button>
       <button class="btn btn-sm btn-outline-light" onclick="downloadOut()">Download</button>
     </div>
   </div>
@@ -144,19 +146,24 @@
         if (!r.ok) throw txt;
         render(txt);
       } catch (err) {
-        out.innerHTML = `<div class="alert alert-danger" role="alert">❌ ${escapeHtml(err)}</div>`;
+        out.innerHTML =
+          `<div class="alert alert-danger" role="alert">❌ ${escapeHtml(err)}</div>`;
       }
     });
 
-    /* ---- render order: JSON → CSV → YAML → XML ---- */
+    /* ---- render order: JSON → CSV → XML → YAML ---- */
     function render(t) {
-      if (showJson(t) || showCsv(t) || showYaml(t) || showXml(t)) { showButtons(); return; }
-      out.innerHTML = `<pre class="p-3 bg-dark rounded text-light">${escapeHtml(t)}</pre>`;
+      if (showJson(t) || showCsv(t) || showXml(t) || showYaml(t)) {
+        showButtons(); return;
+      }
+      out.innerHTML = `<pre class="p-3 bg-dark rounded text-light">
+        ${escapeHtml(t)}
+      </pre>`;
       showButtons();
     }
     const showButtons = () => $btns.classList.remove('d-none');
 
-    function getCurrentOutputString () {
+    function getCurrentOutputString() {
       if (cm) return cm.getValue();
       if (lastCsvData) return Papa.unparse(lastCsvData);
       return (out.querySelector('pre')?.innerText || out.innerText || '').trim();
@@ -165,12 +172,24 @@
     async function copyOut(ev) {
       const btn = ev.currentTarget, text = getCurrentOutputString();
       if (!text) return flash(btn,false);
-      try      { await navigator.clipboard.writeText(text); flash(btn,true); }
-      catch(_) { const ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.left='-9999px'; document.body.appendChild(ta); ta.select(); const ok=document.execCommand('copy'); document.body.removeChild(ta); flash(btn,ok); }
+      try { await navigator.clipboard.writeText(text); flash(btn,true); }
+      catch (_) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        flash(btn,ok);
+      }
     }
     const flash = (btn,ok=true) => {
-      const html=btn.innerHTML; btn.innerHTML=ok?'✅ Copied!':'⚠️ Failed'; btn.disabled=true;
-      setTimeout(()=>{btn.innerHTML=html; btn.disabled=false;},1000);
+      const html = btn.innerHTML;
+      btn.innerHTML = ok ? '✅ Copied!' : '⚠️ Failed';
+      btn.disabled = true;
+      setTimeout(() => { btn.innerHTML = html; btn.disabled = false; }, 1000);
     };
 
     function downloadOut() {
@@ -179,16 +198,23 @@
       if (cm) {
         const mode = cm.getOption('mode');
         if (typeof mode === 'string') {
-          if      (mode.includes('yaml')) ext='yaml';
-          else if (mode.includes('xml'))  ext='xml';
-          else if (mode.includes('json')) ext='json';
-        } else if (mode?.name==='javascript' && mode.json) ext='json';
-      } else if (lastCsvData) ext='csv';
-      const blob = new Blob([content],{type:'text/plain'});
-      const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`output.${ext}`; a.click();
+          if      (mode.includes('yaml')) ext = 'yaml';
+          else if (mode.includes('xml'))  ext = 'xml';
+          else if (mode.includes('json')) ext = 'json';
+        } else if (mode?.name==='javascript' && mode.json) {
+          ext = 'json';
+        }
+      } else if (lastCsvData) {
+        ext = 'csv';
+      }
+      const blob = new Blob([content],{ type:'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `output.${ext}`; a.click();
     }
 
-    const escapeHtml = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const escapeHtml = s =>
+      s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
     function mount(content, mode) {
       out.innerHTML = '<textarea id="viewer"></textarea>';
@@ -198,52 +224,78 @@
         gutters:['CodeMirror-linenumbers','CodeMirror-foldgutter']
       });
       cm.setValue(content);
-      cm.on('gutterClick', (_cm, line, _gutter, ev) => {
+      cm.on('gutterClick', (_cm,line,_gutter,ev) => {
         if (!ev.target.closest('.CodeMirror-foldgutter') &&
             !ev.target.closest('.CodeMirror-linenumber')) return;
         cm.foldCode(CodeMirror.Pos(line,0));
       });
       btns.classList.remove('d-none');
-      expand.onclick  = () => cm.execCommand('unfoldAll');
-      collapse.onclick= () => cm.execCommand('foldAll');
+      expand.onclick   = () => cm.execCommand('unfoldAll');
+      collapse.onclick = () => cm.execCommand('foldAll');
     }
 
     /* ---- detectors ---- */
-    function showJson(t){ try{ mount(JSON.stringify(JSON.parse(t),null,2),{name:'javascript',json:true}); return true;}catch{ return false;} }
-
-    function showCsv(t){
-      if(!t.includes(',')) return false;
-      const res = Papa.parse(t,{header:true,skipEmptyLines:true,escapeChar:'\\',transformHeader:h=>h.trim().replace(/[^\w\s]/g,'').replace(/\s+/g,'_')});
-      const data=res.data; if(!data.length||!Object.keys(data[0]).length) return false;
-      lastCsvData=data;
-      const tbl=document.createElement('table'); tbl.className='table table-bordered table-dark table-striped';
-      const thead=tbl.createTHead(), hdr=thead.insertRow();
-      Object.keys(data[0]).forEach(k=>{ const th=document.createElement('th'); th.textContent=k; hdr.appendChild(th); });
-      const tbody=tbl.createTBody();
-      data.forEach(r=>{ const tr=tbody.insertRow(); Object.values(r).forEach(v=>{ const td=tr.insertCell(); td.textContent=v; }); });
-      out.textContent=''; out.appendChild(tbl);
-      return true;
+    function showJson(t){
+      try {
+        mount(JSON.stringify(JSON.parse(t),null,2),
+              { name:'javascript', json:true });
+        return true;
+      } catch {
+        return false;
+      }
     }
 
-    function showYaml(t){
-      try{ YAML.parse(t); }catch(_){}
-      mount(t,{name:'yaml'});           /* always show as YAML */
+    function showCsv(t){
+      if (!t.includes(',')) return false;
+      const res = Papa.parse(t,{
+        header:true, skipEmptyLines:true, escapeChar:'\\',
+        transformHeader:h=>
+          h.trim().replace(/[^\w\s]/g,'').replace(/\s+/g,'_')
+      });
+      const data = res.data;
+      if (!data.length || !Object.keys(data[0]).length) return false;
+      lastCsvData = data;
+      const tbl = document.createElement('table');
+      tbl.className = 'table table-bordered table-dark table-striped';
+      const thead = tbl.createTHead(), hdr = thead.insertRow();
+      Object.keys(data[0]).forEach(k=>{
+        const th = document.createElement('th');
+        th.textContent = k; hdr.appendChild(th);
+      });
+      const tbody = tbl.createTBody();
+      data.forEach(r=>{
+        const tr = tbody.insertRow();
+        Object.values(r).forEach(v=>{
+          const td = tr.insertCell(); td.textContent = v;
+        });
+      });
+      out.textContent = ''; out.appendChild(tbl);
       return true;
     }
 
     function showXml(t){
-      const doc=new DOMParser().parseFromString(t,'application/xml');
+      const doc = new DOMParser().parseFromString(t,'application/xml');
       if (doc.getElementsByTagName('parsererror').length) return false;
-      mount(prettyXml(doc.documentElement),'xml'); return true;
+      mount(prettyXml(doc.documentElement),
+            { name:'xml' });  /* ← using object form */
+      return true;
     }
+
+    function showYaml(t){
+      try { YAML.parse(t); } catch(_){}
+      mount(t, { name:'yaml' });
+      return true;
+    }
+
     function prettyXml(root){
-      const s=new XMLSerializer().serializeToString(root), lines=s.replace(/(>)(<)(\/*)/g,'$1\n$2$3').split('\n');
-      let depth=0;
+      const s = new XMLSerializer().serializeToString(root),
+            lines = s.replace(/(>)(<)(\/*)/g,'$1\n$2$3').split('\n');
+      let depth = 0;
       return lines.map(l=>{
-        if(l.match(/^<\/\w/)) depth--;
-        const pad='  '.repeat(depth);
-        if(l.match(/^<\w[^>]*[^\/]>.*$/)) depth++;
-        return pad+l;
+        if (l.match(/^<\/\w/)) depth--;
+        const pad = '  '.repeat(depth);
+        if (l.match(/^<\w[^>]*[^\/]>.*$/)) depth++;
+        return pad + l;
       }).join('\n');
     }
   </script>
